@@ -48,13 +48,22 @@ func avatarWide(u *github.User) template.HTML {
 	return template.HTML(fmt.Sprintf(`<a href="%s" title="%s"><img src="%s" width="96" height="96"></a>`, u.GetHTMLURL(), u.GetLogin(), u.GetAvatarURL()))
 }
 
-func groupByUser(results []*triage.RuleResult, milestoneID int, dedup bool) []*Swimlane {
+func contains(list []string, v string) bool {
+	for _, i := range list {
+		if i == v {
+			return true
+		}
+	}
+	return false
+}
+
+func groupByUser(results []*triage.RuleResult, milestones []string, dedup bool) []*Swimlane {
 	lanes := map[string]*Swimlane{}
 	seenItem := map[string]bool{}
 
 	for i, r := range results {
 		for _, co := range r.Items {
-			if milestoneID > 0 && co.Milestone.GetNumber() != milestoneID {
+			if len(milestones) > 0 && !contains(milestones, co.Milestone.GetTitle()) {
 				continue
 			}
 
@@ -141,9 +150,24 @@ func (h *Handlers) Kanban() http.HandlerFunc {
 			chosen, milestones := milestoneChoices(p.CollectionResult.RuleResults, milestoneID)
 			klog.Infof("milestones chosen: %d, choices: %+v", milestoneID, milestones)
 
+			// CASEY: Modified to filter by milestone title rather than number, so we can
+			// do queries across repositories.
+			chosenList := []string{chosen.GetTitle()}
+
+			// CASEY: Filter the list of milestones to show so that we only get one item
+			// in the dropdown per milestone title.
+			filterMap := map[string]bool{}
+			filteredMilestones := []Choice{}
+			for _, c := range milestones {
+				if _, ok := filterMap[c.Text]; !ok {
+					filterMap[c.Text] = true
+					filteredMilestones = append(filteredMilestones, c)
+				}
+			}
+
 			p.Description = p.Collection.Description
-			p.Swimlanes = groupByUser(p.CollectionResult.RuleResults, chosen.GetNumber(), p.Collection.Dedup)
-			p.SelectorOptions = milestones
+			p.Swimlanes = groupByUser(p.CollectionResult.RuleResults, chosenList, p.Collection.Dedup)
+			p.SelectorOptions = filteredMilestones
 			p.SelectorVar = "milestone"
 			p.Milestone = chosen
 			p.ClosedPerDay = calcClosedPerDay(p.VelocityStats)

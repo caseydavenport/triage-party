@@ -1,0 +1,319 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+settings:
+  name: generic-kubernetes
+  min_similarity: 0.8
+  repos:
+    - https://github.com/kubernetes/community
+
+  # Who should automatically be considered a project member?
+  # See: https://developer.github.com/v4/enum/commentauthorassociation/
+  # Default is "collaborator, owner, member", unless "members" is set
+  #
+  #member-roles:
+  # - collaborator
+  # - owner
+  # - member
+  # Who else do we consider to be a project member? Default is empty.
+  #members:
+  # - tstromberg
+
+collections:
+  - id: daily
+    name: Daily Triage
+    dedup: true
+    description: >
+      queue to be emptied once a day
+    rules:
+      - issue-needs-triage
+      - issue-needs-comment-overdue
+      # Don't leave code reviews hanging
+      - pr-reviewable
+
+  - id: weekly
+    name: Weekly Triage
+    dedup: true
+    description: >
+      queue to be emptied once a week in a team triage meeting
+    rules:
+      - awaiting-maintainer-response-60d
+      - awaiting-user-response-30d
+      # Issues needing reprioritization
+      - many-reactions
+      - issue-zombies
+      # PR's needing closure
+      - pr-approved-stale
+      - pr-unapproved-stale
+
+  - id: release
+    name: Releases
+    display: kanban
+    description: Track release status
+    rules:
+      - open-release-issues
+      - open-prs-in-milestone
+      - docs-required
+      - complete-prs
+
+  - id: similar
+    name: Similar
+    description: Items which appear similar to one other. Review for duplicates or vague titles.
+    rules:
+      - similar-prs
+      - similar-issues
+
+  - id: __open__
+    name: All open PR's and Issues that should be considered for repository stats (hidden)
+    used_for_statistics: true
+    hidden: true
+    rules:
+      - open-prs
+      - open-issues
+
+  - id: __velocity__
+    name: issues to include in velocity metrics
+    used_for_statistics: true
+    hidden: true
+    rules:
+      - closed-milestone-issues
+
+rules:
+  ### Daily Triage ####
+  issue-needs-triage:
+    name: "Unprioritized issues"
+    resolution: "Add kind/, impact/ and likelihood/ labels"
+    type: issue
+    filters:
+      - label: "!kind/.*"
+      - label: "!impact/.*"
+      - label: "!likelihood/.*"
+
+  issue-needs-comment-overdue:
+    name: "Support issues older than 7 days"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - label: "kind/support"
+      - created: +7d
+
+  issue-waiting-for-maintainer-response:
+    name: "Support issues older than 7 days"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - label: "kind/support"
+      - tag: "!commented"
+      - tag: "recv"
+      - created: +30d
+
+  # Don't leave code reviews hanging
+  pr-reviewable:
+    name: "Pull Requests: Review Ready"
+    resolution: "Review requests or mark them as hold-merge"
+    type: pull_request
+    filters:
+      - label: "!hold-merge"
+      - tag: "!changes-requested"
+      - tag: "!send"
+
+  ####### Weekly Triage #########
+  awaiting-maintainer-response-60d:
+    name: "Awaiting maintainer response for 60+ days"
+    resolution: "Add a response"
+    type: issue
+    filters:
+      - label: "kind/support"
+      - tag: "!member-last"
+      - updated: +60d
+
+  awaiting-user-response-30d:
+    name: "Awaiting user response for 30+ days"
+    resolution: "Close the issue"
+    type: issue
+    filters:
+      - label: "kind/support"
+      - tag: "member-last"
+      - updated: +30d
+
+  # issues needing reprioritization
+  many-reactions:
+    name: "Many reactions, low priority"
+    resolution: "Reconsider priority"
+    filters:
+      - reactions: ">3"
+      - reactions-per-month: ">0.75"
+      - label: "!impact/high"
+      - label: "!likelihood/high"
+
+  issue-zombies:
+    name: "Screaming into the void"
+    resolution: "Reopen, or ask folks to open a new issue"
+    type: issue
+    filters:
+      - state: closed
+      - updated: -7d
+      - tag: recv
+      - comments-while-closed: ">2"
+
+  # PR's needing closure
+  pr-approved-stale:
+    name: "Pull requests: Approved and getting old"
+    type: pull_request
+    filters:
+      - label: "!hold-merge"
+      - tag: approved
+      - updated: +5d
+
+  pr-unapproved-stale:
+    name: "Pull Requests: Stale"
+    resolution: "Add comment and/or close PR"
+    type: pull_request
+    filters:
+      - created: +20d
+      - updated: +5d
+      - tag: "!approved"
+
+  ### Releases
+  open-release-issues:
+   name: "Open issues"
+   type: issue
+   filters:
+    - tag: open-milestone
+    - state: open
+
+  open-prs-in-milestone:
+    name: "PRs in progress"
+    type: pr
+    filters:
+    - tag: open-milestone
+    - state: open
+
+  docs-required:
+    name: "Requires a docs PR"
+    type: pr
+    filters:
+    - label: docs-pr-required
+    - tag: open-milestone
+    - state: closed
+    - tag: merged
+
+  complete-prs:
+    name: "PRs complete"
+    filters:
+    - tag: open-milestone
+    - state: closed
+    - tag: merged
+
+  ## Bug Scrub ##
+  bugs-old-recv:
+    name: "Bugs that deserve a follow-up comment"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - tag: recv
+      - responded: +60d
+      - created: +60d
+      - label: "kind/bug"
+
+  features-old-recv:
+    name: "Features that deserve a follow-up comment"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - tag: recv
+      - responded: +90d
+      - created: +30d
+      - label: "kind/feature"
+
+  other-old-recv:
+    name: "Items that deserve a follow-up comment"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - tag: recv
+      - responded: +60d
+      - label: "!kind/feature"
+      - label: "!kind/bug"
+      - label: "!triage/support"
+
+  features-old:
+    name: "Features that have not been commented on within 90 days"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - responded: +90d
+      - created: +90d
+      - label: "kind/feature"
+
+  bugs-old:
+    name: "Bugs that have not been commented on within 60 days"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - label: "kind/bug"
+      - responded: +60d
+      - created: +60d
+      - label: "!priority/awaiting-evidence"
+
+  other-old:
+    name: "Items that have not been commented on within 60 days"
+    resolution: "Comment or close the issue"
+    type: issue
+    filters:
+      - responded: +90d
+      - created: +90d
+      - label: "!kind/feature"
+      - label: "!kind/bug"
+      - label: "!triage/support"
+      - label: "!priority/awaiting-evidence"
+
+  lifecycle-stale:
+    name: "Issues nearing expiration"
+    resolution: "Close or label as frozen"
+    filters:
+      - label: lifecycle/stale
+
+  ## Similar
+  similar-prs:
+    name: "Similar Pull Requests"
+    type: pull_request
+    resolution: Close as duplicate or give a better title
+    filters:
+      - tag: similar
+
+  similar-issues:
+    name: "Similar Issues"
+    type: issue
+    resolution: Close as duplicate or give a better title
+    filters:
+      - tag: similar
+
+  # for statistics generation
+  open-issues:
+    name: "Open Issues"
+    type: issue
+
+  open-prs:
+    name: "Open PRs"
+    type: pull_request
+
+  closed-milestone-issues:
+    name: "Recently closed milestone issues"
+    type: issue
+    filters:
+      - state: closed
+      - closed: -90d
+      - milestone: ".*"
+      - label: "!triage/duplicate"
