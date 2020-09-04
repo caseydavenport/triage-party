@@ -13,22 +13,19 @@
 # limitations under the License.
 
 settings:
-  name: generic-kubernetes
+  name: generic-calico
   min_similarity: 0.8
   repos:
-    - https://github.com/kubernetes/community
-
-  # Who should automatically be considered a project member?
-  # See: https://developer.github.com/v4/enum/commentauthorassociation/
-  # Default is "collaborator, owner, member", unless "members" is set
-  #
-  #member-roles:
-  # - collaborator
-  # - owner
-  # - member
-  # Who else do we consider to be a project member? Default is empty.
-  #members:
-  # - tstromberg
+    - https://github.com/projectcalico/calico
+    - https://github.com/projectcalico/calicoctl
+    - https://github.com/projectcalico/node
+    - https://github.com/projectcalico/cni-plugin
+    - https://github.com/projectcalico/felix
+    - https://github.com/projectcalico/typha
+    - https://github.com/projectcalico/confd
+    - https://github.com/projectcalico/kube-controllers
+    - https://github.com/projectcalico/appy-policy
+    - https://github.com/projectcalico/pod2daemon
 
 collections:
   - id: daily
@@ -66,6 +63,15 @@ collections:
       - open-prs-in-milestone
       - docs-required
       - complete-prs
+
+  - id: bugs
+    name: Bugs
+    description: Overview of open bugs
+    rules:
+      - p0-bugs
+      - p1-bugs
+      - p2-bugs
+      - p3-bugs
 
   - id: similar
     name: Similar
@@ -217,73 +223,41 @@ rules:
     - tag: merged
 
   ## Bug Scrub ##
-  bugs-old-recv:
-    name: "Bugs that deserve a follow-up comment"
-    resolution: "Comment or close the issue"
-    type: issue
-    filters:
-      - tag: recv
-      - responded: +60d
-      - created: +60d
-      - label: "kind/bug"
-
-  features-old-recv:
-    name: "Features that deserve a follow-up comment"
-    resolution: "Comment or close the issue"
-    type: issue
-    filters:
-      - tag: recv
-      - responded: +90d
-      - created: +30d
-      - label: "kind/feature"
-
-  other-old-recv:
-    name: "Items that deserve a follow-up comment"
-    resolution: "Comment or close the issue"
-    type: issue
-    filters:
-      - tag: recv
-      - responded: +60d
-      - label: "!kind/feature"
-      - label: "!kind/bug"
-      - label: "!triage/support"
-
-  features-old:
-    name: "Features that have not been commented on within 90 days"
-    resolution: "Comment or close the issue"
-    type: issue
-    filters:
-      - responded: +90d
-      - created: +90d
-      - label: "kind/feature"
-
-  bugs-old:
-    name: "Bugs that have not been commented on within 60 days"
-    resolution: "Comment or close the issue"
+  p0-bugs:
+    name: "Critically important bugs"
+    resolution: "Fix them"
     type: issue
     filters:
       - label: "kind/bug"
-      - responded: +60d
-      - created: +60d
-      - label: "!priority/awaiting-evidence"
+      - label: "impact/high"
+      - label: "likelihood/high"
 
-  other-old:
-    name: "Items that have not been commented on within 60 days"
-    resolution: "Comment or close the issue"
+  p1-bugs:
+    name: "Very important bugs"
+    resolution: "Fix them"
     type: issue
     filters:
-      - responded: +90d
-      - created: +90d
-      - label: "!kind/feature"
-      - label: "!kind/bug"
-      - label: "!triage/support"
-      - label: "!priority/awaiting-evidence"
+      - label: "kind/bug"
+      - label: "impact/high"
+      - label: "likelihood/low"
 
-  lifecycle-stale:
-    name: "Issues nearing expiration"
-    resolution: "Close or label as frozen"
+  p2-bugs:
+    name: "Moderately important bugs"
+    resolution: "Fix them"
+    type: issue
     filters:
-      - label: lifecycle/stale
+      - label: "kind/bug"
+      - label: "impact/low"
+      - label: "likelihood/high"
+
+  p3-bugs:
+    name: "Not-so-important bugs"
+    resolution: "Fix them"
+    type: issue
+    filters:
+      - label: "kind/bug"
+      - label: "impact/low"
+      - label: "likelihood/low"
 
   ## Similar
   similar-prs:
