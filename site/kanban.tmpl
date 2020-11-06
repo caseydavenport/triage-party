@@ -99,7 +99,7 @@
         <table id="kanban-table" class="compact is-size-6">
       <thead>
         <tr>
-          <th class="hd" id="assignee-col">Assi</th>
+          <th class="hd" id="assignee-col">Assignee/Author</th>
           {{- range .CollectionResult.RuleResults }}
           <th class="hd" id="{{ .Rule.ID | Class  }}" title="{{ .Rule | toYAML }}">{{ .Rule.Name}}</th>
           {{ end }}

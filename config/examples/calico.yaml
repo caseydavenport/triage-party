@@ -24,7 +24,7 @@ settings:
     - https://github.com/projectcalico/typha
     - https://github.com/projectcalico/confd
     - https://github.com/projectcalico/kube-controllers
-    - https://github.com/projectcalico/appy-policy
+    - https://github.com/projectcalico/app-policy
     - https://github.com/projectcalico/pod2daemon
 
 collections:
@@ -218,6 +218,7 @@ rules:
   complete-prs:
     name: "PRs complete"
     filters:
+    - label: "release-note-required"
     - tag: open-milestone
     - state: closed
     - tag: merged

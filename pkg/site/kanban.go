@@ -69,9 +69,14 @@ func groupByUser(results []*triage.RuleResult, milestones []string, dedup bool) 
 
 			assignees := co.Assignees
 			if len(assignees) == 0 {
-				assignees = append(assignees, &github.User{
-					Login: &unassigned,
-				})
+				// CASEY: Better assignee tracking for Calico.
+				// If there are no assignees explicitly set, then
+				// default to the author.
+				assignees = append(assignees, co.Author)
+
+				// assignees = append(assignees, &github.User{
+				// 	Login: &unassigned,
+				// })
 			}
 
 			for _, a := range assignees {
